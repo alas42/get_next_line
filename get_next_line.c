@@ -1,71 +1,78 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   get_next_line.c                                    :+:      :+:    :+:   */
+/*   get_next_line3.c                                   :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: avogt <marvin@42.fr>                       +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2018/11/16 15:23:18 by avogt             #+#    #+#             */
-/*   Updated: 2018/11/19 17:03:53 by avogt            ###   ########.fr       */
+/*   Created: 2018/11/28 15:12:24 by avogt             #+#    #+#             */
+/*   Updated: 2018/12/01 18:55:48 by avogt            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "get_next_line.h"
-#include "Libft/libft.h"
 #include <stdio.h>
+#include <unistd.h>
+#include <fcntl.h>
 
-
-static int	ft_loop(char **line, int fd, size_t *size)
+int			ft_lenline(char *str)
 {
-	static unsigned int t;
-	char				*tmp;
-	int					ret;
-	int					i;
+	int i;
 
 	i = 0;
-	t = 0;
-	while ((*line)[t] != '\n' && (*line)[t] != '\0' && t < BUFF_SIZE)
-		t++;
-	if (((*line)[t] == '\n' || (*line)[t] == EOF
-				|| (*line)[t] == '\0') && t < BUFF_SIZE)
-	{
-		(*line)[t] = '\0';
-		if ((*line)[t] == '\n')
-			return (1);
-		else
-			return (0);
-	}
-	else if (t == BUFF_SIZE)
-	{
-		tmp = *line;
-		free(*line);
-		*size += BUFF_SIZE;
-		if (!(*line = (char *)malloc(sizeof(char) * (*size))))
-			return (-1);
-		ft_putnbr(*size);
-		ft_putchar('\n');
-		*line = tmp;
-		(*line)[*size - 1] = '\0';
-		ft_putstr("\n1. LINE\n");
-		ft_putstr(*line);
-		ft_putchar('\n');
-		++line;
-		ret = read(fd, *line, BUFF_SIZE);
-	}
-	return (-1);
+	while (str[i] != '\n' && str[i] != '\0')
+		i++;
+	return (i);
 }
 
-int			get_next_line(const int fd, char **line)
+static int	ft_read(int fd, char **buff)
 {
-	int				ret;
-	size_t			size;
+	int		ret;
+	char	tmp[BUFF_SIZE + 1];
 
-	ret = 1;
-	size = BUFF_SIZE + 1;
-	if (!(*line = (char *)malloc(sizeof(char) * size)))
+	ret = 0;
+	while ((ret = read(fd, tmp, BUFF_SIZE)) > 0)
+	{
+		tmp[BUFF_SIZE] = '\0';
+		*buff = ft_strjoin(*buff, tmp);
+		dprintf(1, "buff : %s\n", *buff);
+		if (ft_strchr(*buff, '\n') != NULL)
+			return (1);
+	}
+	if (ret == -1)
 		return (-1);
-	if ((ret = read(fd, *line, BUFF_SIZE)) == -1)
-		return (-1);
-	(*line)[BUFF_SIZE] = '\0';
-	return (ft_loop(line, fd, &size));
+	return (0);
+}
+
+int			get_next_line(int fd, char **line)
+{
+	static char *next = NULL;
+	char		*buff;
+	int			result;
+
+	buff = NULL;
+	if (next)
+	{
+		*line = ft_strsub(next, 0, ft_lenline(next));
+		if (ft_strchr(next, '\n') != NULL)
+		{
+			next = ft_strsub(next, ft_lenline(next) + 1, ft_strlen(next));
+			dprintf(1, "lenline de next = %d\n", ft_lenline(next));
+			dprintf(1, "next %s\n", next);
+			return (1);
+		}
+		*line = ft_strdup(next);
+		ft_strdel(&next);
+	}
+	result = ft_read(fd, &buff);
+	if (result == 1)
+	{
+		next = ft_strsub(buff, ft_lenline(buff) + 1, ft_strlen(buff));
+		dprintf(1, "lenline de buff : %d  + len de buff : %zu\n", ft_lenline(buff), ft_strlen(buff));
+		*line = ft_strjoin(*line, ft_strsub(buff, 0, ft_lenline(buff)));
+	}
+	else if (result == 0)
+		*line = ft_strjoin(*line, buff);
+	ft_strdel(&buff);
+	return (result);
 }
