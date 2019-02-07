@@ -3,37 +3,32 @@
 /*                                                        :::      ::::::::   */
 /*   main.c                                             :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: avogt <marvin@42.fr>                       +#+  +:+       +#+        */
+/*   By: avogt <avogt@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2018/11/16 15:55:20 by avogt             #+#    #+#             */
-/*   Updated: 2018/12/01 17:50:37 by avogt            ###   ########.fr       */
+/*   Created: 2019/01/25 13:02:08 by avogt             #+#    #+#             */
+/*   Updated: 2019/02/07 16:41:33 by avogt            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "./avogt/get_next_line.h"
-#include <stdio.h>
-#include <unistd.h>
-#include <fcntl.h>
+#include "get_next_line.h"
 
-int		main(int argc, char **argv)
+int		main(int ac, char **av)
 {
-	char	*c;
-	int		fd;
-	int		good;
-	int		counter;
+	int fd;
+	int ret;
+	char *line;
 
-	counter = 0;
-	fd = open(argv[1], O_RDONLY);
-	c = NULL;
-	good = 2;
-	while (good != -1 && good != 0)
+	(void)ac;
+	line = NULL;
+	fd = open(av[1], O_RDONLY);
+	ret = 1;
+	while ((ret = get_next_line(fd, &line)) == 1)
 	{
-		if (good != 2)
-			ft_putchar('\n');
-		good = get_next_line(fd, &c);
-		dprintf(1, "%s", c);
-		ft_strdel(&c);
-		counter++;
+//		ft_putstr("line = #");
+//		ft_putendl(line);
+		free(line);
 	}
+	ft_strdel(&line);
+	close(fd);
 	return (0);
 }
